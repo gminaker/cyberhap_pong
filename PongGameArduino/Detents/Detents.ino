@@ -98,33 +98,6 @@ void loop()
    readSensor();
    correctPosition();
    adjustMotorOutput();
-   sendDataToProcessing();
-   checkInputFromProcessing();
-}
-
-/**
-* checks for serial communication 
-* from processing. Runs after every loop()
-* TODO: Update this to read proper inputs. 
-*/
-void checkInputFromProcessing()
-{
-  while (Serial.available())
-  {
-    char in = (char)Serial.read();
-    Serial.println(in);
-    byte val, b;
-    
-    if (in == 'f') 
-    {
-      val = Serial.read();
-      if(val == 0){
-        hapticFeedback = false;
-      }else if(val == 1){
-        hapticFeedback = true;
-      }
-    }
-  } 
 }
 
 /**
@@ -231,11 +204,7 @@ void adjustMotorOutput()
   duty = min(duty, .95);
   duty = max(duty, 0);
   
-  if(hapticFeedback){
-    motorOutput = (int)(duty * 255); 
-  }else{
-    motorOutput = 0;
-  }
+  motorOutput = detents(duty, 500);
   
   analogWrite(pwmPinA, motorOutput);
   
@@ -249,15 +218,51 @@ void adjustMotorOutput()
    
 }
 
-
 /**
-*
-*/
-void sendDataToProcessing()
-{
-  int temp = map(correctedPosition, -4500, 4500, -500, 500);
-  Serial.println(temp);
+ * adjusts motor output to emulate Haptic Detents
+ * at an interval of input x position.  
+ */  
+float detents(float duty, double x) {
+  
+  float oldResult = (int)(duty * 300);
+  float newDuty = duty * 15;
+  float sineDuty = sin(newDuty) + 1;
+  float result = int(sineDuty * 50);
+  
+  
+  float mod = (int)correctedPosition % (int)x;
+  if(mod < 0){
+   mod = mod + x; 
+  }
+ 
+  
+  float motor = map(mod, 0, x, -10, 10);
+  
+  
+   Serial.print("\n"); 
+    Serial.print("Pos: ");
+    Serial.print(correctedPosition); 
+    Serial.print("\n"); 
+    Serial.print("Mod: ");
+    Serial.print(mod); 
+    Serial.print("\n"); 
+    Serial.print("Motor:");
+    Serial.print(motor); 
+    Serial.print("\n"); 
+    
+    
+  return motor;
+  
+  
+   
+   // Serial.print(" Result:");
+   // Serial.print(result); 
+    Serial.print("\n"); 
+    
+  //return result; 
 }
+
+
 
 /**
  * Adjusts the PWM frequency for motor output.

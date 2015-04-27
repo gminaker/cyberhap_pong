@@ -83,6 +83,7 @@ void setup()
   InitializeGame();
   
   updateHapKitBoolean('f',hapticFeedback);
+  
 }
 
 
@@ -130,7 +131,7 @@ void addInputWidgets(){
                          .addItem("Haptics On",1)
                          .addItem("Haptics Off",2)
                          .setNoneSelectedAllowed(false)
-                         .activate(1);
+                         .activate(0);
                          
     sliderCp = cp5.addSlider("Position Gain")
                   .setPosition(WIDTH*0.2, HEIGHT*0.06)
@@ -140,11 +141,11 @@ void addInputWidgets(){
                   .setPosition(WIDTH*0.2, HEIGHT*0.09)
                   .setRange(0,1);
                         
-    canvasPositionTime = new MyCanvas(WIDTH*0.57, HEIGHT*0.05, "Position / Time");
+    canvasPositionTime = new Graph(WIDTH*0.57, HEIGHT*0.05, "Position / Time");
     canvasPositionTime.pre(); // use cc.post(); to draw on top of existing controllers.
     cp5.addCanvas(canvasPositionTime);
     
-    canvasVelocityTime = new MyCanvas(WIDTH*0.78, HEIGHT*0.05, "Velocity / Time");
+    canvasVelocityTime = new Graph(WIDTH*0.78, HEIGHT*0.05, "Velocity / Time");
     canvasVelocityTime.pre(); // use cc.post(); to draw on top of existing controllers.
     cp5.addCanvas(canvasVelocityTime);
 }
@@ -372,8 +373,12 @@ void DrawGame()
   
 }
 
-
-class MyCanvas extends Canvas {
+/**
+* Class for generating position/time and velocity/time graphs
+* on display. 
+*
+*/
+class Graph extends Canvas {
 
   int count;
   float x;
@@ -381,11 +386,18 @@ class MyCanvas extends Canvas {
   int cwidth;
   int cheight;
   String title;
+  int[] plot;
+  ArrayList<float[]> plots;
   
-  MyCanvas(float xin, float yin, String titlein){
+  boolean reachedMaxX;
+  
+  
+  Graph(float xin, float yin, String titlein){
     x = xin;
     y = yin;
     title = titlein;
+    plots = new ArrayList<float[]>(); 
+    reachedMaxX = false;
   }
 
   public void setup(PApplet theApplet) {
@@ -395,16 +407,45 @@ class MyCanvas extends Canvas {
   }  
 
   public void draw(PApplet p) {
-    // renders a square with randomly changing colors
-    // make changes here.
+    
     p.fill(100);
     p.stroke(255);
     p.rect(x, y, cwidth, cheight);
-    p.line(x, y+cheight, x+cwidth, y+30);
     p.fill(255);
     p.textSize(12);
     p.text(title, x+2, y+20);
+    
+    plotGraph(p);
+    
+    
     count++;
   }
+  
+  void plotGraph(PApplet p){
+    
+    if(x+count >= x+cwidth){
+       reachedMaxX = true;
+    }
+    
+    if(reachedMaxX){
+     plots.remove(0); 
+     
+     for(int i=0; i < plots.size() ;i++){
+        float[] plot = {plots.get(i)[0]-1, plots.get(i)[1]};
+        plots.set(i, plot);
+     }
+    }
+    
+    float correctedy = map(twiddlerPosition, -4500, 4500, -cheight, cheight);
+    float[] plot = {min(x+count, x+cwidth), min(y+cheight, max(y, y+(cheight/2)+correctedy))};
+    plots.add(plot);
+   
+    if(plots.size() >1){
+      for(int i=1; i < plots.size() ;i++){
+        p.line(plots.get(i-1)[0],  plots.get(i-1)[1], plots.get(i)[0],  plots.get(i)[1]);
+      }
+    }
+  }
+
 }
 
