@@ -116,15 +116,14 @@ void loop()
      loopCount++;
    }
    
-   checkInputFromProcessing();
 }
 
 /**
 * checks for serial communication 
 * from processing. Runs after every loop()
-* TODO: Update this to read proper inputs. 
+* if serial data waiting.
 */
-void checkInputFromProcessing()
+void serialEvent()
 {
   while (Serial.available())
   {
