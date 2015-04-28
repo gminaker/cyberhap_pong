@@ -80,6 +80,13 @@ void setup()
   
   cp5 = new ControlP5(this);
   addInputWidgets();
+  
+  if(!rateControl){
+   sliderCv.hide(); 
+  }else{
+   sliderCp.hide();
+  }
+  
   InitializeGame();
   
   updateHapKitBoolean('f',hapticFeedback);
@@ -162,8 +169,12 @@ void controlEvent(ControlEvent theEvent) {
   if(theEvent.isFrom(radioRatePosition)) {
     if(theEvent.getValue() == 1){
       rateControl = false; 
+      sliderCp.show();
+      sliderCv.hide();
     }else if(theEvent.getValue() == 2){
       rateControl = true;
+      sliderCp.hide();
+      sliderCv.show();
     }
   }else if(theEvent.isFrom(radioHapticFeedback)){
     if(theEvent.getValue() == 1){
@@ -338,10 +349,8 @@ void serialEvent(Serial port)
         String xString = trim(list[0]);                // trim off whitespaces.
         int xByte = int(xString);           // convert to a number.
         
-        //println(xByte);
-        
         if(!Float.isNaN(xByte) && xByte != 0){
-          int updatedX = (int)map(xByte, -400, 400, -1000, 1000);
+          int updatedX = (int)map(xByte, -4500, 4500, -1500, 1500);
           twiddlerPosition = updatedX;
         }       
        } finally {}
