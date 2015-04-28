@@ -51,6 +51,8 @@ boolean recentRotation;
 boolean hapticFeedback;
 boolean rateControl;
 
+int loopCount;
+
 /**************************************
 * FUNCTIONS
 ***************************************/
@@ -86,6 +88,7 @@ void setup()
       readings[i] = initialPosition; 
    }
  
+   loopCount = 0;
    sensorRotations = 0;
    readingIndex = 0;
    hapticFeedback = true;
@@ -102,7 +105,17 @@ void loop()
    readSensor();
    correctPosition();
    adjustMotorOutput();
-   sendDataToProcessing();
+   
+   // reduce the frequency we send 
+   // data to processing to improve 
+   // performance
+   if(loopCount > 6){
+     sendDataToProcessing();
+     loopCount = 0;
+   }else{
+     loopCount++;
+   }
+   
    checkInputFromProcessing();
 }
 
@@ -201,7 +214,6 @@ int correctPosition()
 */
 int convertToMetres()
 {
-  
   return correctedPosition; 
 }
 
@@ -281,11 +293,11 @@ void adjustMotorOutput()
 
 
 /**
-*  
+*  Outputs the corrected position 
+*  for use in Processing
 */
 void sendDataToProcessing()
 {
-  //int temp = map(correctedPosition, -4500, 4500, -500, 500);
   Serial.println(correctedPosition);
 }
 
