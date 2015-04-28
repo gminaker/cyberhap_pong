@@ -21,7 +21,7 @@ const int ROTATION_THRESHOLD = 700;
 const int READINGS = 10;
 
 // Debug Comments
-const boolean DEBUG_POSITION_CORRECTION = false;
+const boolean DEBUG_POSITION_CORRECTION = true;
 const boolean DEBUG_MOTOR_OUTPUT = false;
 
 // Kinematic Parameters
@@ -105,17 +105,7 @@ void loop()
    readSensor();
    correctPosition();
    adjustMotorOutput();
-   
-   // reduce the frequency we send 
-   // data to processing to improve 
-   // performance
-   if(loopCount > 6){
-     sendDataToProcessing();
-     loopCount = 0;
-   }else{
-     loopCount++;
-   }
-   
+   sendDataToProcessing();
 }
 
 /**
@@ -181,7 +171,6 @@ int correctPosition()
   // Checks for a rotation of the motor wheel:
   if(!recentRotation){
      updateSensorRotations(diff); 
-     recentRotation = true;
   }else{
      recentRotation = false; 
   }
@@ -228,12 +217,14 @@ void updateSensorRotations(int diff)
 {  
   if(diff <= -ROTATION_THRESHOLD){
     sensorRotations++;
-    //Serial.println("SwitchForwards");
+    Serial.println("SwitchForwards");
+    recentRotation = true;
   }
   
   if(diff >= ROTATION_THRESHOLD){
     sensorRotations--;
-    //Serial.println("SwitchReverse");
+    Serial.println("SwitchReverse");
+    recentRotation = true;
   }
 }
 
