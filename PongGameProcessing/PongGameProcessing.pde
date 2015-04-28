@@ -341,7 +341,7 @@ void serialEvent(Serial port)
         //println(xByte);
         
         if(!Float.isNaN(xByte) && xByte != 0){
-          int updatedX = (int)map(xByte, -400, 400, -1000, 1000);
+          int updatedX = (int)map(xByte, -4500, 4500, -1000, 1000);
           twiddlerPosition = updatedX;
         }       
        } finally {}

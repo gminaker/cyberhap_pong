@@ -76,6 +76,10 @@ void setup()
    // Initial position sensor reading
    initialPosition = analogRead(posPinA);
    correctedPosition = 0;
+   
+   // Initialize motor 
+   analogWrite(pwmPinA, 0);     // set to not be spinning (0/255)
+   digitalWrite(dirPinA, LOW);  // set direction
   
    // Reset all sensor readings to initial sensor value
    for(int i=0; i<READINGS; i++){
@@ -145,7 +149,9 @@ void readSensor()
 
 
 /**
-*
+* Takes the raw MR sensor readings and corrects
+* the value, accounting for flips of the motor wheel
+* and the initial handle position
 */
 int correctPosition()
 {
@@ -153,20 +159,27 @@ int correctPosition()
     //difference btwn current raw position and last raw position
   int diff; 
     
+   // Find the difference between the last two MR sensor readings:
   if(readingIndex > 0){
     diff = readings[readingIndex] - readings[readingIndex - 1];
   }else{
     diff = readings[readingIndex] - readings[READINGS - 1];
   }
   
+  // Checks for a rotation of the motor wheel:
   if(!recentRotation){
      updateSensorRotations(diff); 
+     recentRotation = true;
   }else{
      recentRotation = false; 
   }
   
+  // Set handle starting position to be 0:
   long correction = readings[readingIndex] - initialPosition;
+  // Account for 'flips' or 'rotations' that have occurred:
   correctedPosition = correction + (1000*sensorRotations);
+  
+  correctedPosition = convertToMetres();
   
   if(DEBUG_POSITION_CORRECTION)
   {
@@ -179,20 +192,36 @@ int correctPosition()
   
 }
 
+
 /**
+* TODO: convert the corrected position
+* to be in metres, using the calibration
+* data and kinematic parameters. 
 *
+*/
+int convertToMetres()
+{
+  
+  return correctedPosition; 
+}
+
+
+/**
+* Determines if the difference between 
+* the last two sensor readins, 'diff', 
+* is large enough to indicate a flip of 
+* the motor wheel. If so, update the rotation
+* counter. 
 */
 void updateSensorRotations(int diff)
 {  
   if(diff <= -ROTATION_THRESHOLD){
     sensorRotations++;
-    recentRotation = true;
     //Serial.println("SwitchForwards");
   }
   
   if(diff >= ROTATION_THRESHOLD){
     sensorRotations--;
-    recentRotation = true;
     //Serial.println("SwitchReverse");
   }
 }
@@ -216,6 +245,7 @@ void adjustMotorOutput()
     Serial.print(force);
     Serial.print("\n");
   }
+   
   
   if(force > 0) {
     digitalWrite(dirPinA, REVERSE);
@@ -251,12 +281,12 @@ void adjustMotorOutput()
 
 
 /**
-*
+*  
 */
 void sendDataToProcessing()
 {
-  int temp = map(correctedPosition, -4500, 4500, -500, 500);
-  Serial.println(temp);
+  //int temp = map(correctedPosition, -4500, 4500, -500, 500);
+  Serial.println(correctedPosition);
 }
 
 /**
