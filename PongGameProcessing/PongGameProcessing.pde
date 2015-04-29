@@ -26,6 +26,8 @@ Slider sliderCp;
 Slider sliderCv;
 Canvas canvasPositionTime;
 Canvas canvasVelocityTime;
+Button nextButton;
+Button prevButton;
 
 //constants
 int PADDLE_WIDTH = 15;
@@ -69,15 +71,15 @@ void setup()
   size(WIDTH,HEIGHT);
   frameRate(30);
   myPort = new Serial(this, Serial.list()[serialPortIndex], 9600);
-  
+   //<>//
   myPort.bufferUntil('\n');
   
   //for sounds
   minim = new Minim(this);
   toc = minim.loadFile("toc.wav");
-  
+   //<>//
   randomSeed(millis());
-  
+   //<>//
   cp5 = new ControlP5(this);
   addInputWidgets();
   
@@ -91,6 +93,8 @@ void setup()
   
   updateHapKitBoolean('f',hapticFeedback);
   
+  gameStage = 0;
+  StateChange();
 }
 
 
@@ -100,7 +104,7 @@ void draw() {
   stroke(0,0,255);
   
   UpdateGame();
-  DrawGame();
+  DrawGame(); 
 }
 
 public void updateHapKitBoolean(char updateType, Boolean bool)
@@ -114,6 +118,7 @@ public void updateHapKitBoolean(char updateType, Boolean bool)
 }
 
 void addInputWidgets(){
+  
   radioRatePosition = cp5.addRadioButton("Control By:")
                          .setPosition(WIDTH*0.05, HEIGHT*0.05)
                          .setSize(20,20)
@@ -147,14 +152,15 @@ void addInputWidgets(){
     sliderCv = cp5.addSlider("Velocity Gain")
                   .setPosition(WIDTH*0.2, HEIGHT*0.09)
                   .setRange(0,1);
+                  
+    nextButton = cp5.addButton("Next", 0.0, int(WIDTH*0.95)-60, int(HEIGHT*0.95), 60, 20); 
+    
+    prevButton = cp5.addButton("Prev", 0.0, int(WIDTH*0.05), int(HEIGHT*0.95), 60, 20); 
                         
     canvasPositionTime = new Graph(WIDTH*0.57, HEIGHT*0.05, "Position / Time");
-    canvasPositionTime.pre(); // use cc.post(); to draw on top of existing controllers.
-    cp5.addCanvas(canvasPositionTime);
     
     canvasVelocityTime = new Graph(WIDTH*0.78, HEIGHT*0.05, "Velocity / Time");
-    canvasVelocityTime.pre(); // use cc.post(); to draw on top of existing controllers.
-    cp5.addCanvas(canvasVelocityTime);
+
 }
 
 
@@ -167,6 +173,7 @@ void addInputWidgets(){
 */
 void controlEvent(ControlEvent theEvent) {
   if(theEvent.isFrom(radioRatePosition)) {
+    paused = true;
     if(theEvent.getValue() == 1){
       rateControl = false; 
       sliderCp.show();
@@ -177,12 +184,21 @@ void controlEvent(ControlEvent theEvent) {
       sliderCv.show();
     }
   }else if(theEvent.isFrom(radioHapticFeedback)){
+    paused = true;
     if(theEvent.getValue() == 1){
       hapticFeedback = true; 
     }else if(theEvent.getValue() == 2){
       hapticFeedback = false;
     }
     updateHapKitBoolean('f', hapticFeedback);
+  }else if(theEvent.isFrom(nextButton)){
+    gameStage++;
+    StateChange();
+    paused = true;
+  }else if(theEvent.isFrom(prevButton)){
+    gameStage--;
+    StateChange();
+    paused = true;
   }
 }
 
@@ -413,6 +429,8 @@ class Graph extends Canvas {
     count = 0;
     cwidth = 150;
     cheight = 100;
+    plots = new ArrayList<float[]>(); 
+    reachedMaxX = false;
   }  
 
   public void draw(PApplet p) {
@@ -425,7 +443,6 @@ class Graph extends Canvas {
     p.text(title, x+2, y+20);
     
     plotGraph(p);
-    
     
     count++;
   }
@@ -457,4 +474,3 @@ class Graph extends Canvas {
   }
 
 }
-
